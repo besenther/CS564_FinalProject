@@ -2,8 +2,8 @@ import socket
 import subprocess
 import json
 
-SERVER_IP = '127.0.0.1'
-SERVER_PORT = 65432
+SERVER_IP = '10.0.2.15'
+SERVER_PORT = 8080
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
     while True:
