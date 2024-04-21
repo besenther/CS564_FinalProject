@@ -24,6 +24,8 @@ while True:
             print("Connection to {} closed".format(addr[0]))
             break
 
-        print("Received from client: ", response.decode())
+        while response.decode() != "Done":
+            response = conn.recv(4096)
+            print(response.decode())
 
 print("Connection closed")
