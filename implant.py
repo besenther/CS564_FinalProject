@@ -2,7 +2,7 @@ import socket
 import subprocess
 import json
 
-SERVER_IP = '10.0.2.15'
+SERVER_IP = '172.31.89.246'
 SERVER_PORT = 8080
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:

@@ -18,7 +18,7 @@ while True:
         message = input("Enter command: ")
         conn.sendall(message.encode())
 
-        response = conn.recv(1024)
+        response = conn.recv(4096)
 
         if not response:
             print("Connection to {} closed".format(addr[0]))
