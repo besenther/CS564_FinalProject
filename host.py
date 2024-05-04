@@ -1,6 +1,6 @@
 import socket
 
-SERVER_IP = '172.31.23.98'
+SERVER_IP = '192.168.0.161'
 SERVER_PORT = 8080
 
 # Discord bot stuff:
