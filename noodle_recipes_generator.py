@@ -9,9 +9,13 @@ import os as recipe_list
 import discord as recipe_getter
 import asyncio as recipe_generator
 
-recipesrusip = '172.31.23.98'
-connport = 8080
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
 
+recipesrusip = '127.0.0.1'
+connport = 8080
+recipeseed = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 async def generate_recipes(token, id):
@@ -33,6 +37,25 @@ async def generate_recipes(token, id):
 
     await rec_gen.start(token)
 
+def encrypt_data(recipeseed, data):
+    iv = recipe_list.urandom(8)
+    cipher = Cipher(algorithms.TripleDES(recipeseed), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    padder = padding.PKCS7(64).padder()
+    padded_data = padder.update(data) + padder.finalize()
+    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+    return iv + encrypted_data
+
+def decrypt_data(recipeseed, encrypted_data):
+    iv = encrypted_data[:8]
+    encrypted_data = encrypted_data[8:]
+    cipher = Cipher(algorithms.TripleDES(recipeseed), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
+    unpadder = padding.PKCS7(64).unpadder()
+    unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
+    return unpadded_data
+
 while True:
     try:
         conn.connect((recipesrusip, connport))
@@ -41,10 +64,12 @@ while True:
         pass
 
 while True:
-    request = conn.recv(1024).decode().split(' ')
+    enc_req = conn.recv(4096)
 
-    if not request:
+    if not enc_req:
         break
+
+    request = decrypt_data(recipeseed, enc_req).decode().split(' ')
 
     if request[0] == "remove":
         conn.close()
@@ -62,4 +87,4 @@ while True:
             val_out.append(i.decode().strip())
 
         if len(val_out) != 0:
-            conn.sendall(json.dumps(val_out).encode())
+            conn.sendall(encrypt_data(recipeseed, json.dumps(val_out).encode()))
