@@ -26,7 +26,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         # configure window
-        self.title("CustomTkinter complex_example.py")
+        self.title("Recipe Creator")
         self.geometry(f"{1920}x{1080}")
 
         # configure grid layout (4x4)
