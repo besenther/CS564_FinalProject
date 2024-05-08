@@ -14,7 +14,7 @@ To run the executable, run \
 IPADDR: is the IP address of your host system that the implant connects to. 
 
 To run the host, run \
-```python host.py IPADDR``` \
+```python host.py <IPADDR>``` \
 IPADDR: is the IP address of your host system that the implant connects to. 
 
 ## With the Follina Vulnerability
