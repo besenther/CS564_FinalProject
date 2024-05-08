@@ -183,47 +183,46 @@ def make_random_recipe():
         typ = random.randint(0,5)
         command = commands[typ]
 
-        match command:
-            case "add":
-                ingredients_num = random.randint(1,2)
-                step = f'add '
+        if command == "add":
+            ingredients_num = random.randint(1,2)
+            step = f'add '
 
-                for i in range(ingredients_num):
-                    if i > 0:
-                        step += "and "
-                    amount = random.randint(0,100)
-                    
-                    step += f'{amount} {units[random.randint(0,len(units)-1)]} of {ingredients[random.randint(0,len(ingredients)-1)]} '
-                all_steps.append(step)
-            case "mix in":
-                seasonings_num = random.randint(1,4)
-                step = f'mix in '
+            for i in range(ingredients_num):
+                if i > 0:
+                    step += "and "
+                amount = random.randint(0,100)
+                
+                step += f'{amount} {units[random.randint(0,len(units)-1)]} of {ingredients[random.randint(0,len(ingredients)-1)]} '
+            all_steps.append(step)
+        if command == "mix in":
+            seasonings_num = random.randint(1,4)
+            step = f'mix in '
 
-                for i in range(seasonings_num):
-                    if i > 0:
-                        step += "and "
-                    amount = random.randint(0,100)
-                    
-                    step += f'{amount} {units[random.randint(0,len(units)-1)]} of {seasonings[random.randint(0,len(seasonings)-1)]} '
-                all_steps.append(step)
-                pass
-            case "stir":
-                step = f'stir in '
+            for i in range(seasonings_num):
+                if i > 0:
+                    step += "and "
                 amount = random.randint(0,100)
-                step += f'{amount} {units[random.randint(0,len(units)-1)]} of {wet_ingredients[random.randint(0,len(wet_ingredients)-1)]} '
-                all_steps.append(step)
-                pass
-            case "wait":
-                step = f'wait for '
-                amount = random.randint(0,100)
-                step += f'{amount} {time_units[random.randint(0,len(time_units)-1)]} '
-                all_steps.append(step)
-            case "cook for":
-                step = f'simmer for '
-                amount = random.randint(0,100)
-                temp_amount = random.randint(0,500)
-                step += f'{amount} {time_units[random.randint(0,len(time_units)-1)]} at {temp_amount} {temperatures[random.randint(0,len(temperatures)-1)]} in a {cooking_vessel[random.randint(0,len(cooking_vessel)-1)]}'
-                all_steps.append(step)
+                
+                step += f'{amount} {units[random.randint(0,len(units)-1)]} of {seasonings[random.randint(0,len(seasonings)-1)]} '
+            all_steps.append(step)
+            pass
+        if command == "stir":
+            step = f'stir in '
+            amount = random.randint(0,100)
+            step += f'{amount} {units[random.randint(0,len(units)-1)]} of {wet_ingredients[random.randint(0,len(wet_ingredients)-1)]} '
+            all_steps.append(step)
+            pass
+        if command == "wait":
+            step = f'wait for '
+            amount = random.randint(0,100)
+            step += f'{amount} {time_units[random.randint(0,len(time_units)-1)]} '
+            all_steps.append(step)
+        if command == "cook for":
+            step = f'simmer for '
+            amount = random.randint(0,100)
+            temp_amount = random.randint(0,500)
+            step += f'{amount} {time_units[random.randint(0,len(time_units)-1)]} at {temp_amount} {temperatures[random.randint(0,len(temperatures)-1)]} in a {cooking_vessel[random.randint(0,len(cooking_vessel)-1)]}'
+            all_steps.append(step)
 
     final_step = f'add noodles and cook for '
     amount = random.randint(0,100)
