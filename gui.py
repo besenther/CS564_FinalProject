@@ -69,7 +69,7 @@ cooking_vessel = ["pot", "pan", "shoe", "bowl", "french oven", "dutch oven", "wa
 class App(customtkinter.CTk):
     def __init__(self, steps = []):
         super().__init__()
-        print(steps)
+        # print(steps)
 
         # configure window
         self.title("Recipe Creator")
@@ -183,8 +183,9 @@ class App(customtkinter.CTk):
                         self.labels[self.count][0].configure(text=line)
                         self.count +=1
                         self.ingredients.append(line)
-        except FileNotFoundError as e:
-            print("Recipe Does not exist!!")
+        except FileNotFoundError:
+            pass
+            # print("Recipe Does not exist!!")
 
     def show_initial_recipe(self,steps):
         self.count = 0
