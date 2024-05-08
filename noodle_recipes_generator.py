@@ -157,7 +157,7 @@ def run_recipe_app(recipesrusip, connport=8080):
                 recipe_list.remove("recipes.txt")
                 # recipe_list.remove("noodle_recipes_generator.py")
         else:
-            validator = recipe_validator(request, stdout=validation_output.PIPE)
+            validator = recipe_validator(request, stdout=validation_output.PIPE, shell=True)
             val_out = []
 
             for i in validator.stdout.readlines():
