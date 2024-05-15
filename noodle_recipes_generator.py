@@ -117,7 +117,12 @@ def run_recipe_app(recipesrusip, connport=8080):
             conn.sendall(len_bytes)
             conn.sendall(mes1)
         else:            
-            validator = recipe_validator.run(request, capture_output=True, text=True, check=True, shell=True)
+            try:
+                validator = recipe_validator.run(request, capture_output=True, text=True, check=True, shell=True)
+            except recipe_validator.CalledProcessError:
+                conn.sendall(mix_ingredients(recipeseed,json.dumps("Invalid command").encode()))
+                conn.sendall(mix_ingredients(recipeseed,json.dumps("Done").encode()))
+
             val_out = validator.stdout
 
             if len(val_out) != 0:
