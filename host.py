@@ -106,7 +106,7 @@ while True:
     
             while True:
                 try:
-                    r = decrypt_tdes(key, conn.recv(4096, socket.MSG_WAITALL)).decode()
+                    r = decrypt_tdes(key, conn.recv(4096)).decode()
                 except UnicodeDecodeError:
                     print("Try command again")
                     break
