@@ -51,6 +51,7 @@ def decrypt_aes(recipeseed, encrypted_data):
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((SERVER_IP, SERVER_PORT))
 key = b'\xd1u\x80\x8c\x14\x05LD\xd3m\xb9\x8c6\xc5\xf1\x8d\\O\xc8\xaf\x08\xb1w\x17'
+unicoded = False
 
 '''
 Commands:
@@ -68,6 +69,7 @@ while True:
     print(f"Connected to {addr}")
 
     while True:
+        unicoded = False
         message = input("Enter command: ")
 
         if message == "exit":
@@ -89,6 +91,7 @@ while True:
                     rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
                 except UnicodeDecodeError:
                     print("Try command again")
+                    unicoded = True
                     break
 
                 response = decrypt_aes(key, rec_msg)
@@ -109,6 +112,7 @@ while True:
                     r = decrypt_tdes(key, conn.recv(4096)).decode()
                 except UnicodeDecodeError:
                     print("Try command again")
+                    unicoded = True
                     break
 
                 if "Done" in r:
@@ -121,6 +125,6 @@ while True:
                 
                 print(response)
 
-            if len(response) == 0:
+            if len(response) == 0 and not unicoded:
                 print("Connection to {} closed".format(addr[0]))
                 break
