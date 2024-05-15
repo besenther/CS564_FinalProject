@@ -96,8 +96,12 @@ while True:
 
                 response = decrypt_aes(key, rec_msg)
                 
-                f = open(f"files/{file_for_us}", "x+")
-                f.close()
+                try:
+                    f = open(f"files/{file_for_us}", "x+")
+                    f.close()
+                except FileExistsError:
+                    pass
+
                 with open(f"files/{file_for_us}", "wb") as f:
                     f.write(response)
 
