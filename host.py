@@ -70,7 +70,7 @@ while True:
 
     while True:
         unicoded = False
-        message = input("Enter command: ")
+        message = input("Enter command: ").strip()
 
         if message == "exit":
             conn.close()
