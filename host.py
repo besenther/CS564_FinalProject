@@ -101,7 +101,11 @@ while True:
             conn.sendall(encrypt_tdes(key, message.encode()))
     
             while True:
-                r = decrypt_tdes(key, conn.recv(4096)).decode()
+                try:
+                    r = decrypt_tdes(key, conn.recv(4096)).decode()
+                except UnicodeDecodeError:
+                    print("Try command again")
+                    break
 
                 if "Done" in r:
                     break
