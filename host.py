@@ -90,7 +90,7 @@ while True:
                     img_size = decrypt_aes(key, conn.recv(1024)).decode()
                     rec_msg = conn.recv(int(img_size), socket.MSG_WAITALL)
                 except UnicodeDecodeError:
-                    print("Try command again")
+                    print("Could not receive all data without corruption. Try command again")
                     unicoded = True
                     break
 
@@ -111,7 +111,7 @@ while True:
                 try:
                     r = decrypt_tdes(key, conn.recv(4096)).decode()
                 except UnicodeDecodeError:
-                    print("Try command again")
+                    print("Could not receive all data without corruption. Try command again")
                     unicoded = True
                     break
 
